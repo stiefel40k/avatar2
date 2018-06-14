@@ -2,7 +2,7 @@ import sys
 import subprocess
 import telnetlib
 import logging
-import distutils
+import distutils.spawn
 
 from os.path import abspath
 if sys.version_info < (3, 0):

@@ -4,6 +4,7 @@ from avatar2.protocols.gdb import GDBProtocol
 from .target import action_valid_decorator_factory, synchronize_state
 from ..watchmen import watch
 
+
 class GDBTarget(Target):
     def __init__(self, avatar,
                  gdb_executable=None, gdb_additional_args=None, 
