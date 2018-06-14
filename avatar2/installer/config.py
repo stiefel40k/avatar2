@@ -11,48 +11,59 @@ OPENOCD = 'openocd'
 QEMU = 'avatar-qemu'
 PANDA = 'avatar-panda'
 GDB_ARM = 'gdb (ARM)'
-GDB_X86 = 'gdb (x86)' 
+GDB_X86 = 'gdb (x86)'
+GDB_AVR = 'gdb (AVR)'
+SIMAVR = 'simavr'
 
 
 TARGETS = OrderedDict(
     [
-    (OPENOCD, { 'git': 'https://git.code.sf.net/p/openocd/code',
-               'configure': '',
-               'make': '',
-               'rel_path': 'src/openocd',
-               'install_cmd': ['./bootstrap','./configure','make'],
-               'apt_name': 'openocd'
-             }),
-    (QEMU, {  'git': 'https://github.com/avatartwo/avatar-qemu',
-             'configure': '--disable-sdl --target-list=arm-softmmu',
-             'make': '',
-             'rel_path': 'arm-softmmu/qemu-system-arm',
-             'install_cmd': ['git submodule update --init dtc',
-                             './configure', 'make'],
-          }),
-    (PANDA, {'git': 'https://github.com/avatartwo/avatar-panda',
-             'configure': '--disable-sdl --target-list=arm-softmmu',
-             'make': '',
-             'rel_path': 'arm-softmmu/qemu-system-arm',
-             'install_cmd': ['git submodule update --init dtc',
-                             './configure', 'make'],
-           }),
-    (GDB_X86, { 'apt_name': 'gdb' }),
-    (GDB_ARM, { 'apt_name': 'gdb-arm-none-eabi',
-               'sys_name': 'arm-none-eabi-gdb'})
+        (OPENOCD, { 'git': 'https://git.code.sf.net/p/openocd/code',
+                   'configure': '',
+                   'make': '',
+                   'rel_path': 'src/openocd',
+                   'install_cmd': ['./bootstrap','./configure','make'],
+                   'apt_name': 'openocd'
+                 }),
+        (QEMU, {  'git': 'https://github.com/avatartwo/avatar-qemu',
+                 'configure': '--disable-sdl --target-list=arm-softmmu',
+                 'make': '',
+                 'rel_path': 'arm-softmmu/qemu-system-arm',
+                 'install_cmd': ['git submodule update --init dtc',
+                                 './configure', 'make'],
+              }),
+        (PANDA, {'git': 'https://github.com/avatartwo/avatar-panda',
+                 'configure': '--disable-sdl --target-list=arm-softmmu',
+                 'make': '',
+                 'rel_path': 'arm-softmmu/qemu-system-arm',
+                 'install_cmd': ['git submodule update --init dtc',
+                                 './configure', 'make'],
+               }),
+        (GDB_X86, { 'apt_name': 'gdb' }),
+        (GDB_ARM, { 'apt_name': 'gdb-arm-none-eabi',
+                   'sys_name': 'arm-none-eabi-gdb'}),
+        (GDB_AVR, {'apt_name': 'gdb-avr',
+                   'sys_name': 'avr-gdb'}),
+
+        (SIMAVR, {'git': 'https://github.com/buserror/simavr',
+                  'configure': '',
+                  'make': '',
+                  'rel_path': 'src/openocd',
+                  'install_cmd': ['make'],
+                  'apt_name': 'simavr'
+                  })
     ]
 )
 
 
 class AvatarConfig(ConfigParser):
-    
 
     def __init__(self):
         super(AvatarConfig, self).__init__()
         self.config_file = realpath(expanduser(CONFIG_FILE))
         self.config_path = dirname(self.config_file)
 
-        mkpath(expanduser(self.config_path)) # create config dir if neccessary
+        mkpath(expanduser(self.config_path)) # create config dir if necessary
 
         # Create a default config if there's no config file yet
         if self.read(expanduser(CONFIG_FILE)) == []:
@@ -68,11 +79,9 @@ class AvatarConfig(ConfigParser):
                 full_path = find(path) or 'None'
                 self.set('TARGETS', t_name, full_path) 
 
-
     def write_config(self):
         with open(expanduser(CONFIG_FILE), 'w+') as cfgfile:
             self.write(cfgfile)
-
 
     def get_target_path(self, target):
         if self.has_section('TARGETS'):
