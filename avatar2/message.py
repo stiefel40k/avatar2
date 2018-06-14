@@ -1,5 +1,4 @@
 
-
 class AvatarMessage(object):
     def __init__(self, origin):
         self.origin = origin
@@ -41,5 +40,20 @@ class RemoteMemoryWriteMessage(AvatarMessage):
         self.address = address
         self.value = value
         self.size = size
+
+
+#class ResultMessage(AvatarMessage):
+#    def __init__(self, origin, result):
+#        super(self.__class__, self).__init__(origin)
+#        self.result = result
+#
+#
+class BreakpointCreatedByConsoleMessage(AvatarMessage):
+    def __init__(self, origin, number, enabled, address):
+        super(self.__class__, self).__init__(origin)
+        self.number = number
+        self.enabled = enabled
+        self.address = address
+
 
 from .targets.target import TargetStates

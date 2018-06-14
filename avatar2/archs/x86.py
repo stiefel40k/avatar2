@@ -2,12 +2,13 @@ from capstone import *
 
 from .architecture import Architecture
 
-from avatar2.installer.config import GDB_X86, OPENOCD
+from avatar2.installer.config import GDB_X86, OPENOCD, SIMAVR
 
 class X86(Architecture):
 
     get_gdb_executable  = Architecture.resolve(GDB_X86)
     get_oocd_executable = Architecture.resolve(OPENOCD)
+    get_simavr_executable = Architecture.resolve(SIMAVR)
 
 
 

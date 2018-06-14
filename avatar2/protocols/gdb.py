@@ -1,4 +1,5 @@
 import sys
+from future.types.newint import long
 from threading import Thread, Event, Condition
 from struct import pack, unpack
 from codecs import encode
@@ -16,7 +17,8 @@ else:
 
 from avatar2.archs.arm import ARM
 from avatar2.targets import TargetStates
-from avatar2.message import AvatarMessage, UpdateStateMessage, BreakpointHitMessage
+from avatar2.message import AvatarMessage, UpdateStateMessage, \
+    BreakpointHitMessage, BreakpointCreatedByConsoleMessage
 
 GDB_PROT_DONE = 'done'
 GDB_PROT_CONN = 'connected'
@@ -40,6 +42,7 @@ class GDBResponseListener(Thread):
             else avatar_queue
         self._async_fast_responses = queue.Queue() if avatar_fast_queue is None\
             else avatar_fast_queue
+        self._local_async_responses = queue.Queue()
         self._sync_responses = {}
         self._gdb_controller = gdb_controller
         self._gdb = gdb_protocol
@@ -92,6 +95,12 @@ class GDBResponseListener(Thread):
             pass  # library loading not supported yet
         elif msg == 'breakpoint-modified':
             pass  # ignore breakpoint modified for now
+        elif msg == 'breakpoint-created':
+            bkpt = payload['bkpt']
+            num = int(bkpt['number'])
+            enabled = True if bkpt['enabled'] == 'y' else False
+            addr = bkpt['addr']
+            avatar_msg = BreakpointCreatedByConsoleMessage(self._origin, num, enabled, addr)
         elif msg == 'memory-changed':
             pass  # ignore changed memory for now
         elif msg == 'stopped':
@@ -135,12 +144,17 @@ class GDBResponseListener(Thread):
 
         return avatar_msg
 
+#    def parse_async_result(self, response):
+#        return ResultMessage(self._origin, response['message'])
+
     def parse_async_response(self, response):
         """
         This functions converts a async gdb/mi message to an avatar message
 
         :param response: A pygdbmi response dictonary
         """
+
+        self.log.debug("Attemting to parse async response {}".format(response))
 
         if response['type'] == 'console':
             self.collect_console_output(response)
@@ -152,14 +166,17 @@ class GDBResponseListener(Thread):
             pass  # TODO: implement handler for output messages
         elif response['type'] == 'notify':
             return self.parse_async_notify(response)
-
-
+#        elif response['type'] == 'result':
+#            return self.parse_async_result(response)
         else:
             raise Exception("GDBProtocol got unexpected response of type %s" %
                             response['type'])
 
     def get_async_response(self, timeout=0):
         return self._async_responses.get(timeout=timeout)
+
+    def get_local_async_respone(self, timeout=0):
+        return self._local_async_responses.get(timeout=timeout)
 
     def get_sync_response(self, token, timeout=5):
         for x in range(timeout * 2):
@@ -200,6 +217,9 @@ class GDBResponseListener(Thread):
                         else:
                             if isinstance(avatar_msg, UpdateStateMessage):
                                 self._async_fast_responses.put(avatar_msg)
+                            elif isinstance(avatar_msg, BreakpointCreatedByConsoleMessage):
+                                self._async_responses.put(avatar_msg)
+                                self._local_async_responses.put(avatar_msg)
                             else:
                                 self._async_responses.put(avatar_msg)
         self._closed.set()
@@ -220,6 +240,7 @@ class GDBResponseListener(Thread):
         if self._console_enable:
             self._console_output += '\n'
             self._console_output += msg['payload']
+
 
 class GDBProtocol(object):
     """Main class for the gdb communication protocol
@@ -282,6 +303,20 @@ class GDBProtocol(object):
         if self._gdbmi is not None:
             self._gdbmi.exit()
             self._gdbmi = None
+
+#    def _async_request(self, request, rexpect):
+#        request = [request] if isinstance(request, str) else request
+#        request = ' '.join(request)
+#        self.log.debug("Sending request: %s" % request)
+#
+#        self._gdbmi.write(request, read_response=False, timeout_sec=0)
+#        try:
+#            response = self._communicator.get_async_response(timeout=1)
+#            ret = True if response['message'] == rexpect else False
+#        except Exception as e:
+#            response = None
+#            ret = None
+#        return ret, response
 
     def _sync_request(self, request, rexpect):
         """ Generic method to send a syncronized request
@@ -436,7 +471,6 @@ class GDBProtocol(object):
             regs_dict = dict([(r,i) for i, r in enumerate(regs) if r != ''])
             self._origin.regs._update(regs_dict)
 
-
     def set_breakpoint(self, line,
                        hardware=False,
                        temporary=False,
@@ -484,6 +518,32 @@ class GDBProtocol(object):
         ret, resp = self._sync_request(cmd, GDB_PROT_DONE)
         self.log.debug("Attempted to set breakpoint. Received response: %s" % resp)
         return int(resp['payload']['bkpt']['number']) if ret else -1
+
+    def set_breakpoint_with_console_interpreter(self, line):
+        #self._communicator.start_console_collection()
+        cmd = ["-interpreter-exec", "console", '"break {}"'.format(line)]
+        ret, resp = self._sync_request(cmd, GDB_PROT_DONE)
+        #self._communicator.stop_console_collection()
+        self.log.debug("Attempted to set breakpoint with console "
+                       "interpreter. Received response: %s" % resp)
+        if ret:
+            try:
+                r = self._communicator.get_local_async_respone(timeout=1)
+                self.log.debug("Received async response: number: {} enabled: "
+                               "{} addr: {}".format(r.number, r.enabled,
+                                                    r.address))
+                return r.number
+            except queue.Empty:
+                return -2
+        return -1
+
+    def get_breakpoint_info(self, number):
+        cmd = ["-break-info", str(number)]
+        ret, resp = self._sync_request(cmd, GDB_PROT_DONE)
+        self.log.debug("Attempted to get breakpoint info. Received response: %s" % resp)
+        if ret and int(resp['payload']['BreakpointTable']['nr_rows']) > 0:
+            return resp['payload']['BreakpointTable']['body'][0]
+        return -1
 
     def set_watchpoint(self, variable, write=True, read=False):
         cmd = ["-break-watch"]

@@ -18,7 +18,7 @@ from .archs.arm import ARM
 from .memory_range import MemoryRange
 from .message import *
 from .peripherals import AvatarPeripheral
-from .targets.target import TargetStates #TargetStates
+from .targets.target import TargetStates, Target  # TargetStates
 from .watchmen import watch, Watchmen
 
 
@@ -32,7 +32,7 @@ class Avatar(Thread):
 
     """
 
-    def __init__(self, arch=ARM, output_directory=None):
+    def __init__(self, arch=ARM, output_directory=None, console_log=False):
         super(Avatar, self).__init__()
 
         
@@ -57,8 +57,11 @@ class Avatar(Thread):
             makedirs(self.output_directory)
         self.log = logging.getLogger('avatar')
         format = '%(asctime)s | %(name)s.%(levelname)s | %(message)s'
-        logging.basicConfig(filename='%s/avatar.log' % self.output_directory,
-                            level=logging.INFO, format=format)
+        if not console_log:
+            logging.basicConfig(filename='%s/avatar.log' % self.output_directory, level=logging.INFO, format=format)
+        else:
+            logging.basicConfig(level=logging.DEBUG, format=format)
+
         self.log.info("Initialized Avatar. Output directory is %s" %
                       self.output_directory)
 
@@ -71,7 +74,9 @@ class Avatar(Thread):
             BreakpointHitMessage: self._handle_breakpoint_hit_message,
             UpdateStateMessage: self._handle_update_state_message,
             RemoteMemoryReadMessage: self._handle_remote_memory_read_message,
-            RemoteMemoryWriteMessage: self._handle_remote_memory_write_msg
+            RemoteMemoryWriteMessage: self._handle_remote_memory_write_msg,
+#            ResultMessage: self._handle_result_msg,
+            BreakpointCreatedByConsoleMessage: self._handle_breakpoint_set_by_console
         }
         self.daemon = True
         self.start()
@@ -107,6 +112,7 @@ class Avatar(Thread):
 
         :ivar backend: the desired backend. Implemented for now: qemu, gdb
         :kwargs:       those argument will be passed to the target-object itself
+        :rtype:        Target
         :return:       The created TargetObject
         """
         target = backend(self, *args, **kwargs)
@@ -272,6 +278,17 @@ class Avatar(Thread):
         message.origin.protocols.remote_memory.send_response(message.id, 0,
                                                              success)
         return message.id, 0, success
+
+#    def _handle_result_msg(self, message):
+#        # TODO this is kinda not used might be good to use this better
+#        self.log.info("Received result of target %s to %s" %
+#                      (message.origin.name, message.result))
+#
+    @watch('TargetSetBreakpoint')
+    def _handle_breakpoint_set_by_console(self, message):
+        self.log.info("Received setting breakpoint with console")
+        ret = {'number': message.number, 'enabled': message.enabled, 'addr': message.address}
+        return ret
 
     def run(self):
         """

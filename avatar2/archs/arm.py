@@ -5,7 +5,7 @@ from keystone import *
 from .architecture import Architecture
 import avatar2
 
-from avatar2.installer.config import QEMU, PANDA, OPENOCD, GDB_ARM
+from avatar2.installer.config import QEMU, PANDA, OPENOCD, GDB_ARM, SIMAVR
 
 class ARM(Architecture):
 
@@ -13,6 +13,7 @@ class ARM(Architecture):
     get_panda_executable = Architecture.resolve(PANDA)
     get_gdb_executable  = Architecture.resolve(GDB_ARM)
     get_oocd_executable = Architecture.resolve(OPENOCD)
+    get_simavr_executable = Architecture.resolve(SIMAVR)
 
 
 

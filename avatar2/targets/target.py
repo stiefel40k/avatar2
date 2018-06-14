@@ -322,6 +322,16 @@ class Target(object):
         """
         return self.protocols.registers.read_register(register)
 
+    @watch('TargetInfoBreakpoint')
+    @action_valid_decorator_factory(TargetStates.NOT_RUNNING, 'execution')
+    def get_breakpoint_info(self, number):
+        return self.protocols.execution.get_breakpoint_info(number)
+
+    @watch('TargetSetBreakpoint')
+    @action_valid_decorator_factory(TargetStates.NOT_RUNNING, 'execution')
+    def set_breakpoint_with_console_interpreter(self, line):
+        return self.protocols.execution.set_breakpoint_with_console_interpreter(line)
+
     @watch('TargetSetBreakpoint')
     @action_valid_decorator_factory(TargetStates.NOT_RUNNING, 'execution')
     def set_breakpoint(self, line, hardware=False, temporary=False, regex=False,

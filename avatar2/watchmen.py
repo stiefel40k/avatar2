@@ -21,6 +21,7 @@ class WatchedTypes(object):
         'TargetRegisterWrite',
         'TargetRegisterRead',
         'TargetSetBreakpoint',
+        'TargetInfoBreakpoint',
         'TargetSetWatchPoint',
         'TargetRemovebreakpoint',
         'TargetWait'
