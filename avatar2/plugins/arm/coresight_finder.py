@@ -18,7 +18,7 @@ component_id_registers = {
 device_type_register_offset = 0xFCC
 
 device_types = {
-    0x0: ("Miscellaneus", {
+    0x0: ("Miscellaneous", {
         0x0: "Other, unidentified",
         0x1: "Validation component"}),
     0x1: ("Trace Sink", {
@@ -37,7 +37,8 @@ device_types = {
         0x2: "Associated with a DSP",
         0x3: "Associated with a Data Engine or Coprocessor",
         0x4: "Associated with a Bus, stimulus derived from bus activity",
-        0x6: "Associated with software, stimulus derived from software activity"}),
+        0x6: "Associated with software, stimulus derived from software "
+             "activity"}),
     0x4: ("Debug Control", {
         0x0: "Other",
         0x1: "Trigger Matrix, for example ECT",

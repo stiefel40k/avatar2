@@ -31,8 +31,10 @@ class SimAvrTarget(Target):
         self.flash = flash
         self.eeprom = eeprom
 
-        self.simavr_executable = (simavr_executable if simavr_executable is not None
-                           else self._arch.get_simavr_executable())
+        if simavr_executable is not None:
+            self.simavr_executable = simavr_executable
+        else:
+            self.simavr_executable = self._arch.get_simavr_executable()
 
         self.additional_args = additional_args if additional_args else []
         self.verbose_level = verbose_level

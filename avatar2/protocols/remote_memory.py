@@ -65,7 +65,7 @@ class RemoteMemoryRequestListener(Thread):
             if Operation(req_struct.operation) == Operation.READ:
                 self.log.debug(("Received RemoteMemoryRequest."
                                 "Read from 0x%x at 0x%x") %
-                                (req_struct.address, req_struct.pc))
+                               (req_struct.address, req_struct.pc))
                 MemoryForwardMsg = RemoteMemoryReadMessage(self._origin,
                                                            req_struct.id,
                                                            req_struct.pc,
@@ -74,7 +74,7 @@ class RemoteMemoryRequestListener(Thread):
             elif Operation(req_struct.operation) == Operation.WRITE:
                 self.log.debug(("Received RemoteMemoryRequest."
                                 "Write to 0x%x at 0x%x") %
-                                (req_struct.address, req_struct.pc))
+                               (req_struct.address, req_struct.pc))
                 MemoryForwardMsg = RemoteMemoryWriteMessage(self._origin,
                                                             req_struct.id,
                                                             req_struct.pc,
@@ -177,7 +177,8 @@ class RemoteMemoryProtocol(object):
         response = RemoteMemoryResp(id, value, success)
         try:
             self._tx_queue.send(response)
-            self.log.debug("Send RemoteMemoryResponse with id %d, %x" % (id, value))
+            self.log.debug(
+                "Send RemoteMemoryResponse with id %d, %x" % (id, value))
             return True
         except Exception as e:
             self.log.error("Unable to send response: %s" % e)

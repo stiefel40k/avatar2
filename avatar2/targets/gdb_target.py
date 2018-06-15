@@ -24,7 +24,10 @@ class GDBTarget(Target):
 
         self.gdb_executable = (gdb_executable if gdb_executable is not None
                                else self._arch.get_gdb_executable())
-        self.gdb_additional_args = gdb_additional_args if gdb_additional_args else []
+        if gdb_additional_args:
+            self.gdb_additional_args = gdb_additional_args
+        else:
+            self.gdb_additional_args = []
         self.gdb_ip = gdb_ip
         self.gdb_port = gdb_port
         self.gdb_serial_device = gdb_serial_device

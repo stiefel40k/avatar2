@@ -1,5 +1,6 @@
 from os.path import abspath
 
+
 class MemoryRange(object):
     """
     This class represents a MemoryRange which can be mapped in one of
@@ -8,7 +9,7 @@ class MemoryRange(object):
     :ivar address:      The load-address of the memory range
     :ivar size:         The size of the memory range
     :ivar name:         User-defined name for the memory range
-    :ivar permissions:  The permisions of the range, represented as textual
+    :ivar permissions:  The permissions of the range, represented as textual
                         unix file permission (rwx)
     :ivar file:         A file used for backing the memory range
     :ivar forwarded:    Enable or disable forwarding for this range

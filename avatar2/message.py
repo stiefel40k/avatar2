@@ -7,7 +7,7 @@ class AvatarMessage(object):
         if self.origin:
             return "%s from %s" % (self.__class__.__name__, self.origin.name)
         else:
-            return "%s from unkown origin" % self.__class__.__name__
+            return "%s from unknown origin" % self.__class__.__name__
 
 
 class UpdateStateMessage(AvatarMessage):
@@ -42,12 +42,6 @@ class RemoteMemoryWriteMessage(AvatarMessage):
         self.size = size
 
 
-#class ResultMessage(AvatarMessage):
-#    def __init__(self, origin, result):
-#        super(self.__class__, self).__init__(origin)
-#        self.result = result
-#
-#
 class BreakpointCreatedByConsoleMessage(AvatarMessage):
     def __init__(self, origin, number, enabled, address):
         super(self.__class__, self).__init__(origin)

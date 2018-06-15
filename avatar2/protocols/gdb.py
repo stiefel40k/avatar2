@@ -774,6 +774,7 @@ class GDBProtocol(object):
 
     def step(self):
         """Step one instruction on the target
+
         :returns: True on success"""
         ret, resp = self._sync_request(
             ["-exec-step-instruction"], GDB_PROT_RUN)
@@ -785,6 +786,7 @@ class GDBProtocol(object):
 
     def run(self):
         """Starts the execution of the target
+
         :returns: True on success"""
         ret, resp = self._sync_request(["-exec-run"], GDB_PROT_RUN)
 
@@ -795,16 +797,18 @@ class GDBProtocol(object):
 
     def cont(self):
         """Continues the execution of the target
+
         :returns: True on success"""
         ret, resp = self._sync_request(["-exec-continue"], GDB_PROT_RUN)
 
         self.log.debug(
-            "Attempted to continue execution on the target. Received response: %s" %
-            resp)
+            "Attempted to continue execution on the target. Received "
+            "response: %s" % resp)
         return ret
 
     def stop(self):
         """Stops execution of the target
+
         :returns: True on success"""
 
         ret, resp = self._sync_request(

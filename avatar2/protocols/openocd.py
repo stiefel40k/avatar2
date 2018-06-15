@@ -17,7 +17,7 @@ class OpenOCDProtocol(object):
     """
     This class implements the openocd protocol.
     Although OpenOCD itself is very powerful, it is only used as monitor
-    protocol, since all other functionalities are also exposed via the 
+    protocol, since all other functionalities are also exposed via the
     gdb-interface, which is easier to parse in an automatic manner.
 
     :param openocd_script:     The openocd scripts to be executed.
@@ -44,7 +44,7 @@ class OpenOCDProtocol(object):
         
         executable_path = distutils.spawn.find_executable(openocd_executable)
 
-        self._cmd_line = [executable_path ,
+        self._cmd_line = [executable_path,
                           '--command', 'telnet_port %d' % telnet_port,
                           '--command', 'gdb_port %d' % gdb_port]
         self._cmd_line += additional_args
@@ -57,7 +57,7 @@ class OpenOCDProtocol(object):
         with open("%s/openocd_out.txt" % output_directory, "wb") as out, \
                 open("%s/openocd_err.txt" % output_directory, "wb") as err:
             self._openocd = subprocess.Popen(self._cmd_line,
-                                             stdout=out, stderr=err)#, shell=True)
+                                             stdout=out, stderr=err)
         self.log = logging.getLogger('%s.%s' %
                                      (origin.log.name, self.__class__.__name__)
                                      ) if origin else \

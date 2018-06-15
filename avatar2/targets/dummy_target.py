@@ -5,14 +5,15 @@ import random
 import threading
 import time
 
-from avatar2.message import RemoteMemoryReadMessage, BreakpointHitMessage, UpdateStateMessage
+from avatar2.message import RemoteMemoryReadMessage, BreakpointHitMessage, \
+    UpdateStateMessage
 from avatar2.targets import Target, TargetStates
 
 
 class _TargetThread(threading.Thread):
     """Thread that mimics a running target"""
 
-    def __init__(self, target):
+    def __init__(self, target):  # type: (Target) -> None
         threading.Thread.__init__(self)
         self.target = target
         self.please_stop = False
@@ -36,7 +37,9 @@ class _TargetThread(threading.Thread):
                 self.target.log.info("Taking a break..")
                 # Add a message to the Avatar queue to trigger the
                 # breakpoint 
-                self.target.avatar.queue.put(BreakpointHitMessage(self.target, 1, addr))
+                self.target.avatar.queue.put(BreakpointHitMessage(self.target,
+                                                                  1,
+                                                                  addr))
                 break
             # 90% chances of reading from a forwarded memory address
             else:
@@ -46,7 +49,8 @@ class _TargetThread(threading.Thread):
                 addr = random.randint(mem_range[0], mem_range[1] - 4)
                 # Add a message in the Avatar queue to read the value at
                 # that address
-                self.target.avatar.queue.put(RemoteMemoryReadMessage(self.target, 55, addr, 4))
+                self.target.avatar.queue.put(
+                    RemoteMemoryReadMessage(self.target, 55, 55, addr, 4))
         self.target.log.info("Avatar told me stop..")
 
 
@@ -106,8 +110,9 @@ class DummyTarget(Target):
         return True
 
     # We keep tracks of breakpoints
-    def set_breakpoint(self, line, hardware=False, temporary=False, regex=False, condition=None, ignore_count=0,
-                       thread=0):
+    def set_breakpoint(self, line, hardware=False, temporary=False,
+                       regex=False, condition=None, ignore_count=0,
+                       thread=0, **kwargs):
         self.bp.append(line)
 
     def remove_breakpoint(self, breakpoint):
@@ -120,14 +125,16 @@ class DummyTarget(Target):
 
     def cont(self):
         if self.state != TargetStates.RUNNING:
-            self.avatar.queue.put(UpdateStateMessage(self, TargetStates.RUNNING))
+            self.avatar.queue.put(
+                UpdateStateMessage(self, TargetStates.RUNNING))
             self.thread = _TargetThread(self)
             self.thread.daemon = True
             self.thread.start()
 
     def get_status(self):
         if self.thread:
-            self.status.update({"state": self.state, "steps": self.thread.steps})
+            self.status.update(
+                {"state": self.state, "steps": self.thread.steps})
         else:
             self.status.update({"state": self.state, "steps": '-'})
         return self.status
@@ -141,5 +148,6 @@ class DummyTarget(Target):
     def stop(self):
         if self.state == TargetStates.RUNNING:
             self.thread.please_stop = True
-            self.avatar.queue.put(UpdateStateMessage(self, TargetStates.STOPPED))
+            self.avatar.queue.put(
+                UpdateStateMessage(self, TargetStates.STOPPED))
         return True

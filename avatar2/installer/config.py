@@ -15,32 +15,31 @@ GDB_X86 = 'gdb (x86)'
 GDB_AVR = 'gdb (AVR)'
 SIMAVR = 'simavr'
 
-
 TARGETS = OrderedDict(
     [
-        (OPENOCD, { 'git': 'https://git.code.sf.net/p/openocd/code',
+        (OPENOCD, {'git': 'https://git.code.sf.net/p/openocd/code',
                    'configure': '',
                    'make': '',
                    'rel_path': 'src/openocd',
-                   'install_cmd': ['./bootstrap','./configure','make'],
+                   'install_cmd': ['./bootstrap', './configure', 'make'],
                    'apt_name': 'openocd'
-                 }),
-        (QEMU, {  'git': 'https://github.com/avatartwo/avatar-qemu',
-                 'configure': '--disable-sdl --target-list=arm-softmmu',
-                 'make': '',
-                 'rel_path': 'arm-softmmu/qemu-system-arm',
-                 'install_cmd': ['git submodule update --init dtc',
-                                 './configure', 'make'],
-              }),
+                   }),
+        (QEMU, {'git': 'https://github.com/avatartwo/avatar-qemu',
+                'configure': '--disable-sdl --target-list=arm-softmmu',
+                'make': '',
+                'rel_path': 'arm-softmmu/qemu-system-arm',
+                'install_cmd': ['git submodule update --init dtc',
+                                './configure', 'make'],
+                }),
         (PANDA, {'git': 'https://github.com/avatartwo/avatar-panda',
                  'configure': '--disable-sdl --target-list=arm-softmmu',
                  'make': '',
                  'rel_path': 'arm-softmmu/qemu-system-arm',
                  'install_cmd': ['git submodule update --init dtc',
                                  './configure', 'make'],
-               }),
-        (GDB_X86, { 'apt_name': 'gdb' }),
-        (GDB_ARM, { 'apt_name': 'gdb-arm-none-eabi',
+                 }),
+        (GDB_X86, {'apt_name': 'gdb'}),
+        (GDB_ARM, {'apt_name': 'gdb-arm-none-eabi',
                    'sys_name': 'arm-none-eabi-gdb'}),
         (GDB_AVR, {'apt_name': 'gdb-avr',
                    'sys_name': 'avr-gdb'}),
@@ -48,7 +47,7 @@ TARGETS = OrderedDict(
         (SIMAVR, {'git': 'https://github.com/buserror/simavr',
                   'configure': '',
                   'make': '',
-                  'rel_path': 'src/openocd',
+                  'rel_path': 'src/simavr',
                   'install_cmd': ['make'],
                   'apt_name': 'simavr'
                   })
@@ -63,7 +62,7 @@ class AvatarConfig(ConfigParser):
         self.config_file = realpath(expanduser(CONFIG_FILE))
         self.config_path = dirname(self.config_file)
 
-        mkpath(expanduser(self.config_path)) # create config dir if necessary
+        mkpath(expanduser(self.config_path))  # create config dir if necessary
 
         # Create a default config if there's no config file yet
         if self.read(expanduser(CONFIG_FILE)) == []:
@@ -72,12 +71,12 @@ class AvatarConfig(ConfigParser):
 
             has_apt = 'True' if find('apt-get') else 'False'
             self.set('DIST', 'has_apt', has_apt)
-            self.set('DIST', 'default_install_path', self.config_path+'/')
+            self.set('DIST', 'default_install_path', self.config_path + '/')
 
             for t_name, t_dict in TARGETS.items():
                 path = t_dict.get('sys_name', t_dict.get('apt_name', 'None'))
                 full_path = find(path) or 'None'
-                self.set('TARGETS', t_name, full_path) 
+                self.set('TARGETS', t_name, full_path)
 
     def write_config(self):
         with open(expanduser(CONFIG_FILE), 'w+') as cfgfile:

@@ -35,7 +35,6 @@ class Avatar(Thread):
     def __init__(self, arch=ARM, output_directory=None, console_log=False):
         super(Avatar, self).__init__()
 
-        
         self.shutdowned = False
         signal.signal(signal.SIGINT, self.sigint_wrapper)
         self.sigint_handler = self.shutdown
@@ -56,26 +55,28 @@ class Avatar(Thread):
         if not path.exists(self.output_directory):
             makedirs(self.output_directory)
         self.log = logging.getLogger('avatar')
-        format = '%(asctime)s | %(name)s.%(levelname)s | %(message)s'
+        log_format = '%(asctime)s | %(name)s.%(levelname)s | %(message)s'
         if not console_log:
-            logging.basicConfig(filename='%s/avatar.log' % self.output_directory, level=logging.INFO, format=format)
+            logging.basicConfig(filename='%s/avatar.log'
+                                         % self.output_directory,
+                                level=logging.INFO,
+                                format=log_format)
         else:
-            logging.basicConfig(level=logging.DEBUG, format=format)
+            logging.basicConfig(level=logging.DEBUG, format=log_format)
 
         self.log.info("Initialized Avatar. Output directory is %s" %
                       self.output_directory)
 
-        # Setup the avatarqueues and register default handler
+        # Setup the avatar-queues and register default handler
         self._close = Event()
         self.queue = queue.Queue()
         self.fast_queue = queue.Queue()
         self.fast_queue_listener = AvatarFastQueueProcessor(self)
-        self.message_handlers = { 
+        self.message_handlers = {
             BreakpointHitMessage: self._handle_breakpoint_hit_message,
             UpdateStateMessage: self._handle_update_state_message,
             RemoteMemoryReadMessage: self._handle_remote_memory_read_message,
             RemoteMemoryWriteMessage: self._handle_remote_memory_write_msg,
-#            ResultMessage: self._handle_result_msg,
             BreakpointCreatedByConsoleMessage: self._handle_breakpoint_set_by_console
         }
         self.daemon = True
@@ -111,7 +112,8 @@ class Avatar(Thread):
         Adds a new target to the analyses
 
         :ivar backend: the desired backend. Implemented for now: qemu, gdb
-        :kwargs:       those argument will be passed to the target-object itself
+        :kwargs:       those argument will be passed to the target-object
+                       itself
         :rtype:        Target
         :return:       The created TargetObject
         """
@@ -139,7 +141,7 @@ class Avatar(Thread):
 
     def init_targets(self):
         """
-        Inits all created targets
+        Initializes all created targets
         """
         for t in self.get_targets():
             t[1].init()
@@ -150,12 +152,16 @@ class Avatar(Thread):
         """
         Adds a memory range to avatar
 
-        :param emulate:      Emulation function that will take name, address and size if set
+        :param name:         Name of this range
+        :param permissions:  Permission for the memory range
+        :param emulate:      Emulation function that will take name, address
+                             and size if set
         :param address:      Base-Address of the Range
         :param size:         Size of the range
         :param file:         A file backing this range, if applicable
         :param forwarded:    Whether this range should be forwarded
-        :param forwarded_to: If forwarded is true, specify the forwarding target
+        :param forwarded_to: If forwarded is true, specify the forwarding
+                             target
         """
         if emulate:
             python_peripheral = emulate(name, address, size, **kwargs)
@@ -199,7 +205,7 @@ class Avatar(Thread):
         :param to_target:       the destination target
         :param sync_regs:      Whether registers should be synced
         :param synced_ranges:  The memory ranges whose contents should be
-                                transfered
+                                transferred
         :type from_target:      Target()
         :type to_target:        Target()
         :type sync_regs:       bool
@@ -207,7 +213,7 @@ class Avatar(Thread):
         """
 
         if from_target.state != TargetStates.STOPPED or \
-                        to_target.state != TargetStates.STOPPED:
+                to_target.state != TargetStates.STOPPED:
             raise Exception("Targets must be stopped for State Transfer, \
                              but target_states are (%s, %s)" %
                             (from_target.state, to_target.state))
@@ -218,11 +224,12 @@ class Avatar(Thread):
                 to_target.regs._get_names() & from_target.regs._get_names()
                 if hasattr(to_target, 'regs') and hasattr(from_target, 'regs')
                 else self.arch.registers)
-           
-            # The status register can cause a mode-switch, let's update it first
+
+            # The status register can cause a mode-switch, let's update it
+            # first
             if self.arch.sr_name in regs:
                 regs = ([self.arch.sr_name]
-                        + [r for r in regs if r != self.arch.sr_name] )
+                        + [r for r in regs if r != self.arch.sr_name])
 
             # Sync the registers!
             for r in regs:
@@ -249,7 +256,8 @@ class Avatar(Thread):
         range = self.get_memory_range(message.address)
 
         if not range.forwarded:
-            raise Exception("Forward request for non forwarded range received!")
+            raise Exception(
+                "Forward request for non forwarded range received!")
         if range.forwarded_to is None:
             raise Exception("Forward request for non existing target received.\
                             (Address = 0x%x)" % message.address)
@@ -268,33 +276,36 @@ class Avatar(Thread):
     def _handle_remote_memory_write_msg(self, message):
         mem_range = self.get_memory_range(message.address)
         if not mem_range.forwarded:
-            raise Exception("Forward request for non forwarded range received!")
+            raise Exception(
+                "Forward request for non forwarded range received!")
         if mem_range.forwarded_to is None:
-            raise Exception("Forward request for non existing target received!")
+            raise Exception(
+                "Forward request for non existing target received!")
 
-        success = mem_range.forwarded_to.write_memory(message.address, message.size,
+        success = mem_range.forwarded_to.write_memory(message.address,
+                                                      message.size,
                                                       message.value)
 
         message.origin.protocols.remote_memory.send_response(message.id, 0,
                                                              success)
         return message.id, 0, success
 
-#    def _handle_result_msg(self, message):
-#        # TODO this is kinda not used might be good to use this better
-#        self.log.info("Received result of target %s to %s" %
-#                      (message.origin.name, message.result))
-#
+    #    def _handle_result_msg(self, message):
+    #        self.log.info("Received result of target %s to %s" %
+    #                      (message.origin.name, message.result))
+    #
     @watch('TargetSetBreakpoint')
     def _handle_breakpoint_set_by_console(self, message):
         self.log.info("Received setting breakpoint with console")
-        ret = {'number': message.number, 'enabled': message.enabled, 'addr': message.address}
+        ret = {'number': message.number, 'enabled': message.enabled,
+               'addr': message.address}
         return ret
 
     def run(self):
         """
         The code of the Thread managing the asynchronous messages received.
-        Default behavior: wait for the priority queue to hold a message and call
-        the _async_handler method to process it.
+        Default behavior: wait for the priority queue to hold a message and
+        call the _async_handler method to process it.
         """
         self._close.clear()
         while True:
@@ -325,6 +336,7 @@ class Avatar(Thread):
     def get_status(self):
         return self.status
 
+
 class AvatarFastQueueProcessor(Thread):
     """
     The avatar fast queue handles events which require immediate action, 
@@ -348,7 +360,7 @@ class AvatarFastQueueProcessor(Thread):
 
             try:
                 message = self.avatar.fast_queue.get(timeout=0.1)
-            except queue.Empty as e:
+            except queue.Empty:
                 continue
 
             if isinstance(message, UpdateStateMessage):

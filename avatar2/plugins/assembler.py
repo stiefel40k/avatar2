@@ -25,6 +25,7 @@ def assemble(self, asmstr, addr=None,
     bytes = "".join([chr(x) for x in bytelist])
     return bytes
 
+
 def inject_asm(self, asmstr, addr=None, arch=None, mode=None):
     """
     Assemble the string, and inject it into the target)
@@ -37,6 +38,7 @@ def inject_asm(self, asmstr, addr=None, arch=None, mode=None):
     bytelist = md.asm(asmstr, addr)[0]
     bytes = "".join([chr(x) for x in bytelist])
     return self.write_memory(addr, 1, bytes, len(bytes), raw=True)
+
 
 def target_added_callback(avatar, *args, **kwargs):
     target = kwargs['watched_return']

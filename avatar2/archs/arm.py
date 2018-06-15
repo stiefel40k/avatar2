@@ -7,15 +7,14 @@ import avatar2
 
 from avatar2.installer.config import QEMU, PANDA, OPENOCD, GDB_ARM, SIMAVR
 
+
 class ARM(Architecture):
 
     get_qemu_executable = Architecture.resolve(QEMU)
     get_panda_executable = Architecture.resolve(PANDA)
-    get_gdb_executable  = Architecture.resolve(GDB_ARM)
+    get_gdb_executable = Architecture.resolve(GDB_ARM)
     get_oocd_executable = Architecture.resolve(OPENOCD)
     get_simavr_executable = Architecture.resolve(SIMAVR)
-
-
 
     qemu_name = 'arm'
     gdb_name = 'arm'
@@ -41,7 +40,6 @@ class ARM_CORTEX_M3(ARM):
     keystone_arch = KS_ARCH_ARM
     keystone_mode = KS_MODE_LITTLE_ENDIAN | KS_MODE_THUMB
 
-
     @staticmethod
     def register_write_cb(avatar, *args, **kwargs):
         if isinstance(kwargs['watched_target'],
@@ -60,6 +58,7 @@ class ARM_CORTEX_M3(ARM):
     def init(avatar):
         avatar.watchmen.add('TargetRegisterWrite', 'after',
                             ARM_CORTEX_M3.register_write_cb)
+
 
 ARMV7M = ARM_CORTEX_M3
 
