@@ -100,13 +100,18 @@ class GDBResponseListener(Thread):
             num = int(bkpt['number'])
             enabled = True if bkpt['enabled'] == 'y' else False
             addr = bkpt['addr']
-            avatar_msg = BreakpointCreatedByConsoleMessage(self._origin, num, enabled, addr)
+            avatar_msg = BreakpointCreatedByConsoleMessage(self._origin,
+                                                           num,
+                                                           enabled,
+                                                           addr)
         elif msg == 'memory-changed':
             pass  # ignore changed memory for now
         elif msg == 'stopped':
             if payload.get('reason') == 'breakpoint-hit':
-                avatar_msg = BreakpointHitMessage(self._origin, payload['bkptno'],
-                                                  int(payload['frame']['addr'], 16))
+                addr = int(payload['frame']['addr'], 16)
+                avatar_msg = BreakpointHitMessage(self._origin,
+                                                  payload['bkptno'],
+                                                  addr)
             elif payload.get('reason') == 'exited-normally':
                 avatar_msg = UpdateStateMessage(
                     self._origin, TargetStates.EXITED)
@@ -255,7 +260,7 @@ class GDBProtocol(object):
             self,
             gdb_executable="gdb",
             arch=ARM,
-            additional_args=[],
+            additional_args=None,
             async_message_handler=None,
             avatar=None,
             origin=None,
@@ -271,6 +276,8 @@ class GDBProtocol(object):
         if not enable_init_files:
             gdb_args += ['--nx']
         gdb_args = ['--quiet', '--interpreter=mi2']
+        if additional_args is None:
+            additional_args = []
         gdb_args += additional_args
         if binary is not None:
             gdb_args += ['--args', binary]
@@ -375,7 +382,8 @@ class GDBProtocol(object):
             "Attempted to connect to target. Received response: %s" %
             resp)
         if not ret:
-            self.log.critical("GDBProtocol was unable to connect to remote target")
+            self.log.critical("GDBProtocol was unable to connect to remote "
+                              "target")
             raise Exception("GDBProtocol was unable to connect")
         
         self.update_target_regs()
