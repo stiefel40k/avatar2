@@ -478,7 +478,8 @@ class GDBProtocol(object):
                        condition=None,
                        ignore_count=0,
                        thread=0,
-                       pending=False):
+                       pending=False,
+                       relative_to_pc=False):
         """Inserts a breakpoint
 
         :param bool hardware: Hardware breakpoint
@@ -487,6 +488,7 @@ class GDBProtocol(object):
         :param str condition: If set, inserts a breakpoint with specified condition
         :param int ignore_count: Amount of times the bp should be ignored
         :param int thread:    Threadno in which this breakpoints should be added
+        :param relative_to_pc: Set breakpoint with the help of PC (usefull for AVR)
         :returns:             The number of the breakpoint
         """
         cmd = ["-break-insert"]
@@ -511,7 +513,12 @@ class GDBProtocol(object):
             cmd.append("-f")
 
         if isinstance(line, int):
-            cmd.append("*0x%x" % line)
+            if relative_to_pc:
+                pc = self.read_register('pc')*2
+                diff = pc - line
+                cmd.append('"*($pc-({}))"'.format(hex(diff)))
+            else:
+                cmd.append("*0x%x" % line)
         else:
             cmd.append(str(line))
 
@@ -545,7 +552,8 @@ class GDBProtocol(object):
             return resp['payload']['BreakpointTable']['body'][0]
         return -1
 
-    def set_watchpoint(self, variable, write=True, read=False):
+    def set_watchpoint(self, variable, write=True, read=False,
+                       relative_to_pc=False):
         cmd = ["-break-watch"]
         if read is True and write is True:
             cmd.append("-a")
@@ -557,7 +565,12 @@ class GDBProtocol(object):
             raise ValueError("At least one read and write must be True")
 
         if isinstance(variable, int):
-            cmd.append("*0x%x" % variable)
+            if relative_to_pc:
+                pc = self.read_register('pc')*2
+                diff = pc - variable
+                cmd.append('"*($pc-({}))"'.format(hex(diff)))
+            else:
+                cmd.append("*0x%x" % variable)
         else:
             cmd.append(str(variable))
 
@@ -628,13 +641,15 @@ class GDBProtocol(object):
         self.log.debug("Attempted to write memory. Received response: %s" % resp)
         return ret
 
-    def read_memory(self, address, wordsize=4, num_words=1, raw=False):
+    def read_memory(self, address, wordsize=4, num_words=1, raw=False,
+                    relative_to_pc=False):
         """reads memory
 
         :param address:   Address to write to
-        :param wordsize:  the size of a read word (1, 2, 4 or 8) 
+        :param wordsize:  the size of a read word (1, 2, 4 or 8)
         :param num_words: the amount of read words
         :param raw:       Whether the read memory should be returned unprocessed
+        :param relative_to_pc: Read memory address with the help of PC (usefull for AVR)
         :return:          The read memory
         """
 
@@ -645,7 +660,14 @@ class GDBProtocol(object):
         for i in range(0, wordsize * num_words, max_read_size):
             to_read = max_read_size if wordsize * num_words > i + max_read_size - 1 else \
                 wordsize * num_words % max_read_size
-            res, resp = self._sync_request(["-data-read-memory-bytes", str(address + i),
+            if relative_to_pc:
+                pc = self.read_register('pc')*2
+                diff = pc - address
+                cmd_arg = "$pc-({})+{}".format(hex(diff), i)
+            else:
+                cmd_arg = str(address + i)
+            res, resp = self._sync_request(["-data-read-memory-bytes",
+                                            cmd_arg,
                                             str(to_read)],
                                            GDB_PROT_DONE)
 

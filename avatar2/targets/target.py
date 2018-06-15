@@ -288,7 +288,7 @@ class Target(object):
 
     @watch('TargetReadMemory')
     @action_valid_decorator_factory(TargetStates.STOPPED, 'memory')
-    def read_memory(self, address, size, words=1, raw=False):
+    def read_memory(self, address, size, words=1, raw=False, **kwargs):
         """
         Reading from memory of the target
 
@@ -298,7 +298,7 @@ class Target(object):
         :param raw:         Whether the read memory is returned unprocessed
         :return:          The read memory
         """
-        return self.protocols.memory.read_memory(address, size, words, raw)
+        return self.protocols.memory.read_memory(address, size, words, raw, **kwargs)
 
     @watch('TargetRegisterWrite')
     @action_valid_decorator_factory(TargetStates.STOPPED, 'registers')
@@ -354,7 +354,7 @@ class Target(object):
 
     @watch('TargetSetWatchPoint')
     @action_valid_decorator_factory(TargetStates.NOT_RUNNING, 'execution')
-    def set_watchpoint(self, variable, write=True, read=False):
+    def set_watchpoint(self, variable, write=True, read=False, **kwargs):
         """Inserts a watchpoint
 
         :param      variable: The name of a variable or an address to watch
@@ -363,7 +363,8 @@ class Target(object):
         """
         return self.protocols.execution.set_watchpoint(variable,
                                                   write=write,
-                                                  read=read)
+                                                  read=read,
+                                                  **kwargs)
 
     @watch('TargetRemovebreakpoint')
     @action_valid_decorator_factory(TargetStates.STOPPED, 'execution')
